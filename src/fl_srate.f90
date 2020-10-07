@@ -16,31 +16,46 @@ double precision :: x1,y1,x2,y2,x3,y3,x4,y4, &
 !$OMP         vx1,vy1,vx2,vy2,vx3,vy3,vx4,vy4, &
 !$OMP         em,eda,edb,s11,s22,s12, &
 !$OMP         srII,srI,srs2,stII)
-!$ACC kernels loop
-do 2  i = 1,nx-1
-    do 2  j = 1,nz-1
+
+!$ACC parallel loop collapse(2)
+do i = 1,nx-1
+    do j = 1,nz-1
 
         ! Coordinates and strain rates on the element
+        !$acc atomic read
         x1 = cord(j  ,i  ,1)
+        !$acc atomic read
         y1 = cord(j  ,i  ,2)
+        !$acc atomic read
         x2 = cord(j+1,i  ,1)
+        !$acc atomic read
         y2 = cord(j+1,i  ,2)
+        !$acc atomic read
         x3 = cord(j  ,i+1,1)
+        !$acc atomic read
         y3 = cord(j  ,i+1,2)
+        !$acc atomic read
         x4 = cord(j+1,i+1,1)
+        !$acc atomic read
         y4 = cord(j+1,i+1,2)
  
         ! Velocities:
+        !$acc atomic read
         vx1 = vel(j  ,i  ,1)
+        !$acc atomic read
         vy1 = vel(j  ,i  ,2)
+        !$acc atomic read
         vx2 = vel(j+1,i  ,1)
+        !$acc atomic read
         vy2 = vel(j+1,i  ,2)
+        !$acc atomic read
         vx3 = vel(j  ,i+1,1)
+        !$acc atomic read
         vy3 = vel(j  ,i+1,2)
+        !$acc atomic read
         vx4 = vel(j+1,i+1,1)
+        !$acc atomic read
         vy4 = vel(j+1,i+1,2)
-
-
 
         ! 4 different elements (combinations):
         ! b: [d/dx],   c: [d/dy]
@@ -104,15 +119,17 @@ do 2  i = 1,nx-1
         s12 = 0.25d0 * (stress0(j,i,3,1)+stress0(j,i,3,2)+stress0(j,i,3,3)+stress0(j,i,3,4))
         stII = 0.5d0 * sqrt((s11-s22)**2 + 4*s12*s12)
         if( srII.ne.0.d0 ) sshrheat(j,i) = sshrheat(j,i) + stII/srII*srs2*dt
-2 continue
+    enddo
+enddo
+!2 continue
 !$OMP end parallel do
 ! following block is needed for averaging
 dtavg = dtavg + dt
 !$ACC update device(dtavg)
 ! re-initialisation after navgsr steps
+!$acc kernels
 if( nsrate .eq. ifreq_avgsr ) then
 !$OMP parallel do
-!$ACC kernels loop
     do i = 1,nx-1
         do j = 1, nz-1
             e2sr(j,i) = se2sr(j,i) / dtavg
@@ -126,7 +143,6 @@ if( nsrate .eq. ifreq_avgsr ) then
     nsrate = 0
 elseif( nsrate .eq. -1 ) then
 !$OMP parallel do
-!$ACC kernels loop
     do i = 1,nx-1
         do j = 1, nz-1
             e2sr(j,i) = se2sr(j,i) / dtavg
@@ -135,6 +151,7 @@ elseif( nsrate .eq. -1 ) then
     end do
 !$OMP end parallel do
 endif
+!$acc end kernels
 
 nsrate = nsrate + 1
 !--------------

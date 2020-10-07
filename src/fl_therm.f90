@@ -27,15 +27,17 @@ double precision :: D(3,3)  ! diffusion operator
 !  | /         / |
 !  2         2---3
 
-!$ACC kernels
 ! saving old temperature
+!$ACC kernels
 if (istress_therm.gt.0) temp0(:,:) = temp(:,:)
+!$ACC end kernels
 
 
 !$OMP Parallel private(i,j,iph,cp_eff,cond_eff,dissip,diff,quad_area, &
 !$OMP                  x1,x2,x3,x4,y1,y2,y3,y4,t1,t2,t3,t4,tmpr, &
 !$OMP                  qs,real_area13,area_n,rhs)
 !$OMP do
+!$acc parallel loop
 do i = 1,nx-1
     j = 1  ! top
     !iph = iphase(j,i)
@@ -44,12 +46,15 @@ do i = 1,nx-1
     ! area(j,i) is INVERSE of "real" DOUBLE area (=1./det)
     quad_area = 0.5d0/area(j,i,1) + 0.5d0/area(j,i,2)
 
+    !$acc atomic update
     temp(j,i  ) = temp(j,i  ) + andesitic_melt_vol(i) * heat_latent_magma / quad_area / cp_eff
+    !$acc atomic update
     temp(j,i+1) = temp(j,i+1) + andesitic_melt_vol(i) * heat_latent_magma / quad_area / cp_eff
 end do
 !$OMP end do
 
 !$OMP do
+!$acc parallel loop collapse(2)
 do i = 1,nx-1
     do j = 1,nz-1
 
@@ -70,17 +75,29 @@ do i = 1,nx-1
         diff = cond_eff/den(iph)/cp_eff
 
         ! Calculate fluxes in two triangles
+        !$acc atomic read
         x1 = cord (j  ,i  ,1)
+        !$acc atomic read
         y1 = cord (j  ,i  ,2)
+        !$acc atomic read
         x2 = cord (j+1,i  ,1)
+        !$acc atomic read
         y2 = cord (j+1,i  ,2)
+        !$acc atomic read
         x3 = cord (j  ,i+1,1)
+        !$acc atomic read
         y3 = cord (j  ,i+1,2)
+        !$acc atomic read
         x4 = cord (j+1,i+1,1)
+        !$acc atomic read
         y4 = cord (j+1,i+1,2)
+        !$acc atomic read
         t1 = temp (j   ,i  )
+        !$acc atomic read
         t2 = temp (j+1 ,i  )
+        !$acc atomic read
         t3 = temp (j   ,i+1)
+        !$acc atomic read
         t4 = temp (j+1 ,i+1)
 
         ! Additional sources - radiogenic and shear heating
@@ -102,6 +119,7 @@ end do
 
 
 !$OMP do
+!$acc parallel loop collapse(2)
 do i = 1,nx
     do j = 1,nz
 
@@ -224,6 +242,7 @@ end do
 
 ! Boundary conditions (top and bottom)
 !$OMP do
+!$acc parallel loop
 do i = 1,nx
 
     temp(1,i) = t_top
@@ -240,13 +259,13 @@ end do
 
 ! Boundary conditions: dt/dx =0 on left and right  
 !$OMP do
+!$acc parallel loop
 do j = 1,nz
     temp(j ,1)  = temp(j,2)
     temp(j, nx) = temp(j,nx-1)
 end do
 !$OMP end do
 !$OMP end parallel
-!$ACC end kernels
 
 return
 end 
