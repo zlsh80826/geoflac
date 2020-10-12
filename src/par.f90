@@ -79,7 +79,9 @@ do while( time .le. time_max )
 
   do j = 1, ntest_rem
     ! FLAC
+    call nvtxStartRange('flac')
     call flac
+    call nvtxEndRange()
 
     nloop = nloop + 1
     time = time + dt

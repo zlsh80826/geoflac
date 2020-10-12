@@ -14,7 +14,6 @@
 !   j+1,i        j+1,i+1
 
 subroutine dt_mass
-!$ACC routine(dlmin_prop) gang
 !$ACC routine(Eff_cp) seq
 !$ACC routine(Eff_conduct) seq
 use arrays
@@ -29,7 +28,6 @@ double precision :: pwave, dens, vel_sound, rho_inert, rho_inert2, am3, dte, dtt
 double precision :: rmu, visc_cut
 
 ! minimal propagation distance
-!$ACC kernels
 dlmin = dlmin_prop()
 if (idt_scale .eq. 0) then
     ! find dt below
@@ -53,6 +51,7 @@ dt_maxwell = 1.d+28
 
 vel_max = 0.d0
 
+!$acc parallel loop collapse(3) reduction(max:vel_max)
 do k = 1,2
 do i = 1,nx
 do j = 1,nz
@@ -61,6 +60,7 @@ enddo
 enddo
 enddo
 
+!$ACC kernels
 if (idt_scale .eq. 0) then
     amass = rmass
 else
@@ -165,7 +165,6 @@ end
 !   dlmin = Area/Dmax for each triangle
 
 function dlmin_prop()
-!$ACC routine gang
 use arrays
 use params
 implicit none
@@ -175,7 +174,8 @@ double precision :: dlmin_prop, dlmin, dl, dlm
 dlmin = 1.d+28
 
 !$OMP parallel do private(dl, dlm) reduction(min:dlmin)
-!$ACC loop collapse(2)
+
+!$acc parallel loop collapse(2) reduction(min:dlmin)
 do i = 1,nx-1
     do j = 1,nz-1
 
