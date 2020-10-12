@@ -15,7 +15,10 @@ call nvtxStartRange('fl_therm')
 call fl_therm
 call nvtxEndRange()
 
-if (itherm .eq.2) goto 500  ! Thermal calculation only
+if (itherm .eq.2) then
+!$acc wait(1)
+goto 500  ! Thermal calculation only
+endif
 
 ! Calculation of strain rates from velocity
 call nvtxStartRange('fl_srate')
