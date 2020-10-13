@@ -14,7 +14,8 @@ use params
 implicit none
 
 double precision :: depl(4)
-double precision :: s11p(4),s22p(4),s12p(4),s33p(4),s11v(4),s22v(4),s12v(4),s33v(4)
+double precision :: s11p(4),s22p(4),s12p(4),s33p(4),s11v(4),s22v(4),s12v(4),s33v(4) 
+double precision :: s11ps,s22ps,s12ps,s33ps,s11vs,s22vs,s12vs,s33vs,plas_pre,plas_suf,visc_pre,visc_suf
 double precision :: bulkm,rmu,coh,phi,psi, &
                     stherm,hardn,vis, &
                     de11,de22,de12,de33,dv, &
@@ -69,50 +70,58 @@ do 3 i = 1,nx-1
             de12 = strainr(3,k,j,i)*dt
             de33 = 0.d0
             dv = dvol(j,i,k)
-            s11p(k) = stress0(j,i,1,k) + stherm 
-            s22p(k) = stress0(j,i,2,k) + stherm 
-            s12p(k) = stress0(j,i,3,k) 
-            s33p(k) = stress0(j,i,4,k) + stherm
-            s11v(k) = s11p(k)
-            s22v(k) = s22p(k)
-            s12v(k) = s12p(k)
-            s33v(k) = s33p(k)
+            s11ps = stress0(j,i,1,k) + stherm 
+            s22ps = stress0(j,i,2,k) + stherm 
+            s12ps = stress0(j,i,3,k)
+            s33ps = stress0(j,i,4,k) + stherm
+            s11vs = s11ps
+            s22vs = s22ps
+            s12vs = s12ps
+            s33vs = s33ps
 
             if (irh.eq.1) then
                 ! elastic
-                call elastic(bulkm,rmu,s11p(k),s22p(k),s33p(k),s12p(k),de11,de22,de12)
-                stress0(j,i,1,k) = s11p(k)
-                stress0(j,i,2,k) = s22p(k)
-                stress0(j,i,3,k) = s12p(k)
-                stress0(j,i,4,k) = s33p(k)
+                call elastic(bulkm,rmu,s11ps,s22ps,s33ps,s12ps,de11,de22,de12)
+                stress0(j,i,1,k) = s11ps
+                stress0(j,i,2,k) = s22ps
+                stress0(j,i,3,k) = s12ps
+                stress0(j,i,4,k) = s33ps
 
             elseif (irh.eq.3) then
                 ! viscous
-                call maxwell(bulkm,rmu,vis,s11v(k),s22v(k),s33v(k),s12v(k),de11,de22,de33,de12,dv,&
+                call maxwell(bulkm,rmu,vis,s11vs,s22vs,s33vs,s12vs,de11,de22,de33,de12,dv,&
                      ndim,dt)
-                stress0(j,i,1,k) = s11v(k)
-                stress0(j,i,2,k) = s22v(k)
-                stress0(j,i,3,k) = s12v(k)
-                stress0(j,i,4,k) = s33v(k)
+                stress0(j,i,1,k) = s11vs
+                stress0(j,i,2,k) = s22vs
+                stress0(j,i,3,k) = s12vs
+                stress0(j,i,4,k) = s33vs
 
             elseif (irh.eq.6) then
                 ! plastic
-                call plastic(bulkm,rmu,coh,phi,psi,depl(k),ipls,diss,hardn,s11p(k),s22p(k),s33p(k),s12p(k),de11,de22,de33,de12,&
+                call plastic(bulkm,rmu,coh,phi,psi,depl(k),ipls,diss,hardn,s11ps,s22ps,s33ps,s12ps,de11,de22,de33,de12,&
                      ten_off,ndim)
-                stress0(j,i,1,k) = s11p(k)
-                stress0(j,i,2,k) = s22p(k)
-                stress0(j,i,3,k) = s12p(k)
-                stress0(j,i,4,k) = s33p(k)
+                stress0(j,i,1,k) = s11ps
+                stress0(j,i,2,k) = s22ps
+                stress0(j,i,3,k) = s12ps
+                stress0(j,i,4,k) = s33ps
 
             elseif (irh.ge.11) then 
                 ! Mixed rheology (Maxwell or plastic)
                 call plastic(bulkm,rmu,coh,phi,psi,depl(k),ipls,diss,hardn,&
-                    s11p(k),s22p(k),s33p(k),s12p(k),de11,de22,de33,de12,&
+                    s11ps,s22ps,s33ps,s12ps,de11,de22,de33,de12,&
                     ten_off,ndim)
-                call maxwell(bulkm,rmu,vis,s11v(k),s22v(k),s33v(k),s12v(k),&
+                call maxwell(bulkm,rmu,vis,s11vs,s22vs,s33vs,s12vs,&
                     de11,de22,de33,de12,dv,&
                     ndim,dt)
             endif
+            s11p(k) = s11ps
+            s22p(k) = s22ps
+            s12p(k) = s12ps
+            s33p(k) = s33ps
+            s11v(k) = s11vs
+            s22v(k) = s22vs
+            s12v(k) = s12vs
+            s33v(k) = s33vs
         enddo
 
         if( irh.ge.11 ) then
