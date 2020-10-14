@@ -46,13 +46,13 @@ elseif (idt_scale.eq.2) then
     endif
 endif
 
-dtmax_therm = 1.d+28
+!dtmax_therm = 1.d+28
 dt_maxwell = 1.d+28
-!$ACC update device(dt_elastic, dt_maxwell)
+!$ACC update device(dt_elastic, dt_maxwell) async(1)
 
 vel_max = 0.d0
 
-!$ACC parallel loop collapse(3) reduction(max:vel_max)
+!$acc parallel loop collapse(3) reduction(max:vel_max) async(1)
 do k = 1,2
 do i = 1,nx
 do j = 1,nz
@@ -61,7 +61,7 @@ enddo
 enddo
 enddo
 
-!$ACC kernels
+!$ACC kernels async(1)
 if (idt_scale .eq. 0) then
     amass = rmass
 else
@@ -73,7 +73,7 @@ do iblk = 1, 2
     do jblk = 1, 2
         !$OMP parallel do private(iph, pwave, dens, vel_sound, rho_inert, rho_inert2, &
         !$OMP                     am3, dte, diff, dtt, dt_m, rmu)
-        !$ACC parallel loop collapse(2) reduction(min:dt_elastic) reduction(min:dt_maxwell)
+        !$ACC parallel loop collapse(2) async(1)
         do i = iblk, nx-1, 2
             do j = jblk, nz-1, 2
 
@@ -119,6 +119,7 @@ do iblk = 1, 2
                 else  ! idt_scale=0
                     ! Find the dtime for given geometry, density and elas_mod
                     dte = frac*dlmin*sqrt(dens/pwave)
+                    !$acc atomic update
                     dt_elastic = min(dt_elastic,dte)
                 endif
 
@@ -126,7 +127,7 @@ do iblk = 1, 2
                 ! dtmax = dxmin^2/diffusivity = dx^2/(lyamda/cp*dens)
                 diff = Eff_conduct(j,i)/den(iph)/Eff_cp(j,i)
                 dtt = dlmin*dlmin/diff
-                dtmax_therm =min (dtmax_therm,dtt)
+                !dtmax_therm =min (dtmax_therm,dtt)
 
                 ! Calculate maxwell time step
                 if (ivis_present .eq. 1) then
@@ -139,6 +140,7 @@ do iblk = 1, 2
                             rmu = rm(iph)
                         endif
                         dt_m =v_min/rmu * fracm
+                        !$acc atomic update
                         dt_maxwell = min (dt_m,dt_maxwell)
                     endif
                 endif
@@ -150,9 +152,13 @@ do iblk = 1, 2
     enddo
 enddo
 
-!$ACC update self(dt_elastic, dt_maxwell)
+!!$ACC update self(dt_elastic, dt_maxwell)
+!$acc serial async(1)
 dt = min(dt_elastic, dt_maxwell)
-!$ACC update device(dt)
+!$acc end serial
+!!$ACC update device(dt)
+!$acc update self(dt) async(1)
+!$acc wait(1)
 return
 end
 
