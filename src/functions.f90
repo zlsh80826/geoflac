@@ -28,9 +28,9 @@ function srateII(iz,ix)
 use arrays
 include 'precision.inc'
 
-s11 = 0.25d0 * (strainr(1,1,iz,ix)+strainr(1,2,iz,ix)+strainr(1,3,iz,ix)+strainr(1,4,iz,ix))
-s22 = 0.25d0 * (strainr(2,1,iz,ix)+strainr(2,2,iz,ix)+strainr(2,3,iz,ix)+strainr(2,4,iz,ix))
-s12 = 0.25d0 * (strainr(3,1,iz,ix)+strainr(3,2,iz,ix)+strainr(3,3,iz,ix)+strainr(3,4,iz,ix))
+s11 = 0.25d0 * (strainr(iz,ix,1,1)+strainr(iz,ix,1,2)+strainr(iz,ix,1,3)+strainr(iz,ix,1,4))
+s22 = 0.25d0 * (strainr(iz,ix,2,1)+strainr(iz,ix,2,2)+strainr(iz,ix,2,3)+strainr(iz,ix,2,4))
+s12 = 0.25d0 * (strainr(iz,ix,3,1)+strainr(iz,ix,3,2)+strainr(iz,ix,3,3)+strainr(iz,ix,3,4))
 srateII = 0.5d0 * sqrt((s11-s22)**2 + 4*s12*s12)
 
 return

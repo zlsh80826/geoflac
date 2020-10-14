@@ -39,6 +39,7 @@ integer :: i, j, k, iph, irh, &
 !$ACC parallel loop gang vector collapse(2) private(depl,s11p,s22p,s12p,s33p,s11v,s22v,s12v,s33v)
 do 3 i = 1,nx-1
     do 3 j = 1,nz-1
+
         ! iphase (j,i) is number of a phase NOT a rheology
         iph = iphase(j,i)
         irh = irheol(iph)
@@ -65,9 +66,9 @@ do 3 i = 1,nx-1
         do k = 1,4
 
             ! Incremental strains
-            de11 = strainr(1,k,j,i)*dt
-            de22 = strainr(2,k,j,i)*dt
-            de12 = strainr(3,k,j,i)*dt
+            de11 = strainr(j,i,1,k)*dt
+            de22 = strainr(j,i,2,k)*dt
+            de12 = strainr(j,i,3,k)*dt
             de33 = 0.d0
             dv = dvol(j,i,k)
             s11ps = stress0(j,i,1,k) + stherm 
@@ -192,9 +193,9 @@ do 3 i = 1,nx-1
         end if
 
         ! TOTAL FINITE STRAIN
-        strain(j,i,1) = strain(j,i,1) + 0.25d0*dt*(strainr(1,1,j,i)+strainr(1,2,j,i)+strainr(1,3,j,i)+strainr(1,4,j,i))
-        strain(j,i,2) = strain(j,i,2) + 0.25d0*dt*(strainr(2,1,j,i)+strainr(2,2,j,i)+strainr(2,3,j,i)+strainr(2,4,j,i))
-        strain(j,i,3) = strain(j,i,3) + 0.25d0*dt*(strainr(3,1,j,i)+strainr(3,2,j,i)+strainr(3,3,j,i)+strainr(3,4,j,i))
+        strain(j,i,1) = strain(j,i,1) + 0.25d0*dt*(strainr(j,i,1,1)+strainr(j,i,1,2)+strainr(j,i,1,3)+strainr(j,i,1,4))
+        strain(j,i,2) = strain(j,i,2) + 0.25d0*dt*(strainr(j,i,2,1)+strainr(j,i,2,2)+strainr(j,i,2,3)+strainr(j,i,2,4))
+        strain(j,i,3) = strain(j,i,3) + 0.25d0*dt*(strainr(j,i,3,1)+strainr(j,i,3,2)+strainr(j,i,3,3)+strainr(j,i,3,4))
 
 3 continue
 !$OMP end do
