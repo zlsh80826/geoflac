@@ -362,7 +362,7 @@ perr = 1.d-4
 
 !$OMP parallel do private(xx,yy,l, lt,io,jo,k,n,a1,a2,a3,amod,amodmin,nmin, &
 !$OMP                     numqu,dist1,dist2,dist3)
-!$ACC parallel loop collapse(2) 
+!$ACC parallel loop collapse(2) vector_length(64)
 do i = 1, nxt
     do j = 1, nzt
         xx = cnew(j,i,1)
@@ -498,7 +498,9 @@ integer :: i, j, io, jo, numq
 double precision :: f1, f2, f3
 
 
+!$acc kernels
 dummy = arr
+!$acc end kernels
 
 !$OMP parallel do private(numq,io,jo,f1,f2,f3)
 !$ACC parallel loop collapse(2)
