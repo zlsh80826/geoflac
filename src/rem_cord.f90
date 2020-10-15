@@ -8,7 +8,7 @@ double precision :: xl, xr, xx, zcorr, zl, zr, zz, total_area
 logical, parameter :: do_volcorrection = .false.
 
 ! X - coordinate
-!$ACC kernels
+!$ACC parallel loop gang private(stmpn) async(1)
 do j = 1, nz
 
     if( mode_rem.eq.1 ) then
@@ -29,14 +29,17 @@ end do
 
 
 ! Z-coordinate correction for volume change
+!$ACC kernels async(1)
 if( mode_rem.eq.1 .and. do_volcorrection ) then
     zcorr = -( total_area(0)-rzbo*rxbo ) / abs(xr-xl)
 else
     zcorr = 0
 endif
+!$ACC end kernels
  
 
 ! Z - coordinate
+!$ACC parallel loop gang private(stmpn) async(1)
 do i = 1, nx
 
     !  Top and bottom Z coordinates by interpolation from an old grid
@@ -73,7 +76,7 @@ do i = 1, nx
     end do
 
 end do
-!$ACC end kernels
+!$acc wait(1)
 
 return
 end
