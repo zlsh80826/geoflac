@@ -125,6 +125,7 @@ if( nsrate .eq. ifreq_avgsr ) then
 !$OMP end parallel do
     dtavg = 0
     nsrate = 0
+!$ACC update device(dtavg) async(1)
 elseif( nsrate .eq. -1 ) then
 !$OMP parallel do
 !$ACC parallel loop collapse(2) async(1)
@@ -137,7 +138,7 @@ elseif( nsrate .eq. -1 ) then
 !$OMP end parallel do
 endif
 
-!$acc wait(1)
+!!$acc wait(1)
 nsrate = nsrate + 1
 !--------------
 

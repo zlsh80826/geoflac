@@ -15,18 +15,24 @@ call nvtxStartRange('fl_therm')
 call fl_therm
 call nvtxEndRange()
 
-if (itherm .eq.2) goto 500  ! Thermal calculation only
+if (itherm .eq.2) then
+goto 500  ! Thermal calculation only
+!$acc wait(1)
+endif
 
 ! Calculation of strain rates from velocity
 call nvtxStartRange('fl_srate')
 call fl_srate
-!$ACC update device(dtavg,nsrate)
+!!$ACC update device(dtavg,nsrate)
 call nvtxEndRange()
 
 ! Changing marker phases
 ! XXX: change_phase is slow, don't call it every loop
 call nvtxStartRange('change_phase')
-if( mod(nloop, ifreq_rmasses).eq.0 ) call change_phase
+if( mod(nloop, ifreq_rmasses).eq.0 ) then
+!$acc wait(1)
+call change_phase
+endif
 call nvtxEndRange()
 
 ! Update stresses by constitutive law (and mix isotropic stresses)
@@ -36,7 +42,10 @@ call nvtxEndRange()
 
 ! update stress boundary conditions
 call nvtxStartRange('bc_update')
-if (nystressbc.eq.1) call bc_update
+if (nystressbc.eq.1) then
+!$acc wait(1)
+call bc_update
+endif
 call nvtxEndRange()
 
 ! Calculations in a node: forces, balance, velocities, new coordinates

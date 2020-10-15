@@ -153,6 +153,9 @@ enddo
 !$ACC update self(dt_elastic, dt_maxwell) async(1)
 dt = min(dt_elastic, dt_maxwell)
 !$ACC update device(dt) async(1)
+
+!$acc wait(1)
+
 return
 end
 

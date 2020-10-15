@@ -59,5 +59,7 @@ do iblk = 1, 2
     enddo
 enddo
 
+!$acc wait(1)
+
 return
 end

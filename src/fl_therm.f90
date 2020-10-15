@@ -252,5 +252,7 @@ end do
 !$OMP end do
 !$OMP end parallel
 
+!!$acc wait(1)
+
 return
 end 
